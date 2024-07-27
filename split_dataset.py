@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(description='User args')
 parser.add_argument('--dataset_dir', required=True, help='Path to dataset annotations')
 parser.add_argument('--test_percentage', type=int, default=10, required=False, help='Percentage of images used for the testing set')
 parser.add_argument('--val_percentage', type=int, default=10, required=False, help='Percentage of images used for the validation set')
-parser.add_argument('--nr_trials', type=int, default=10, required=False, help='Number of splits')
+parser.add_argument('--nr_trials', type=int, default=1, required=False, help='Number of splits')
 
 args = parser.parse_args()
 
