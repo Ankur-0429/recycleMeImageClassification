@@ -29,8 +29,8 @@ if torch.cuda.is_available():
 elif torch.backends.mps.is_built() and torch.backends.mps.is_available():
     DEVICE = torch.device("mps")
 BATCH_SIZE=32
-NUM_EPOCHS=1
-NUM_WORKERS=2
+NUM_EPOCHS=3
+NUM_WORKERS=8
 IMAGE_HEIGHT=160
 IMAGE_WIDTH=240
 PIN_MEMORY=True
@@ -47,6 +47,8 @@ def train(loader, model, optimizer, loss_fn):
         loss = loss_fn(predictions, targets)
 
         optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
         loop.set_postfix(loss=loss.item())
 
@@ -105,7 +107,6 @@ def main():
         save_predictions_as_imgs(
             val_loader, model, device=DEVICE
         )
-
 if __name__ == "__main__":
     main()
 

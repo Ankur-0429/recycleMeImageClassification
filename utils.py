@@ -2,6 +2,7 @@ import torch
 import torchvision
 from dataset import SegmentationDataset
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 def save_checkpoint(state, filename="checkpoint.ptch.tar"):
     print("=> Saving checkpoint")
@@ -76,4 +77,3 @@ def save_predictions_as_imgs(
         )
         torchvision.utils.save_image(y.unsqueeze(1), f"{folder}/pred_mask_{idx}.JPG")
     model.train()
-
