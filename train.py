@@ -39,7 +39,7 @@ LOAD_MODEL=False
 def train(loader, model, optimizer, loss_fn):
     loop = tqdm(loader)
 
-    for batch_idx, (data, targets) in enumerate(loop):
+    for _, (data, targets) in enumerate(loop):
         data = data.to(device=DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
 

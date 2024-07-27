@@ -1,12 +1,9 @@
 import json
 import numpy as np
 from PIL import Image
-import torch
 import cv2
 import os
 from torch.utils.data import Dataset
-import torchvision.transforms.functional as TF
-
 class SegmentationDataset(Dataset):
     def __init__(self, annotations_file, transform=None):
         with open(os.path.join("./data/", annotations_file)) as f:
@@ -28,10 +25,8 @@ class SegmentationDataset(Dataset):
                 for seg in ann['segmentation']:
                     seg = [seg[i:i+2] for i in range(0, len(seg), 2)]
                     seg_np = np.array(seg, dtype=np.int32)
-                    rr, cc = seg_np[:, 1], seg_np[:, 0]
-                    rr = np.clip(rr, 0, mask.shape[0] - 1)
-                    cc = np.clip(cc, 0, mask.shape[1] - 1)
-                    mask[rr, cc] = 1.0
+                    if len(seg_np) > 0:
+                        cv2.fillPoly(mask, [seg_np], 1)
 
         if self.transform:
             augmentations = self.transform(image=image, mask=mask)
