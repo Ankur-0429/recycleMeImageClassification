@@ -21,7 +21,12 @@ val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+device = torch.device("cpu")
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+elif torch.backends.mps.is_built() and torch.backends.mps.is_available():
+    device = torch.device("mps")
+print(device)
 
 with open('./data/annotations.json') as f:
     data = json.load(f)
@@ -31,15 +36,12 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
 
-def train(model, train_loader, val_loader, criterion, optimizer, device, epochs=20):
+def train(model, train_loader, val_loader, criterion, optimizer, device, epochs=20, checkpoint_path="unet_model.pth"):
+    best_val_loss = float('inf')
     for epoch in range(epochs):
         model.train()
         train_loss = 0
-        print("images length: " + str(len(train_loader)))
-        i = 0
         for images, masks in train_loader:
-            print(i)
-            i+=1
             images = images.to(device)
             masks = masks.to(device).squeeze(1)
 
@@ -57,14 +59,20 @@ def train(model, train_loader, val_loader, criterion, optimizer, device, epochs=
         with torch.no_grad():
             for images, masks in val_loader:
                 images = images.to(device)
-                masks = masks.to(device)
+                masks = masks.to(device).squeeze(1)
 
                 outputs = model(images)
                 loss = criterion(outputs, masks)
                 val_loss += loss.item()
 
-        print(f"Epoch {epoch+1}/{epochs}, Train Loss: {train_loss/len(train_loader)}, Val Loss: {val_loss/len(val_loader)}")
+        avg_train_loss = train_loss / len(train_loader)
+        avg_val_loss = val_loss / len(val_loader)
 
-train(model, train_loader, val_loader, criterion, optimizer, device, epochs=1)
+        print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss}, Val Loss: {avg_val_loss}")
 
-torch.save(model.state_dict(), "unet_model.pth")
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f"Model checkpoint saved at epoch {epoch+1}")
+
+train(model, train_loader, val_loader, criterion, optimizer, device, epochs=1, checkpoint_path="unet_model.pth")

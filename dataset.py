@@ -34,7 +34,7 @@ class SegmentationDataset(Dataset):
         if self.transform:
             image = self.transform(image)
             mask = torch.tensor(mask, dtype=torch.long)
-            mask = TF.resize(mask.unsqueeze(0), size=image.shape[1:])  # Ensure mask is resized to the same size as the image
-            mask = mask.squeeze(0)  # Remove the added channel dimension
+            mask = TF.resize(mask.unsqueeze(0), size=image.shape[1:])
+            mask = mask.squeeze(0)
 
         return image, mask

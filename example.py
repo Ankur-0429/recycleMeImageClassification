@@ -47,6 +47,6 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load("unet_model.pth", map_location=device))
 
     # Path to the image you want to segment
-    image_path = './data/batch_5/000004.JPG'
+    image_path = './data/batch_5/000000.JPG'
     
     segmented_image = segment_image(image_path, model, device)
