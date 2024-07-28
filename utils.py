@@ -1,8 +1,9 @@
 import torch
-import torchvision
+import numpy as np
 from dataset import SegmentationDataset
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
+import os
+from PIL import Image
 
 def save_checkpoint(state, filename="checkpoint.ptch.tar"):
     print("=> Saving checkpoint")
@@ -63,17 +64,33 @@ def check_accuracy(loader, model, device):
     )
     model.train()
 
-def save_predictions_as_imgs(
-        loader, model, device, folder="saved_images/"
-):
+def save_predictions_as_imgs(loader, model, device, folder="saved_images/"):
     model.eval()
-    for idx, (x,y) in enumerate(loader):
+    os.makedirs(folder, exist_ok=True)
+
+    for idx, (x, y) in enumerate(loader):
         x = x.to(device=device)
         with torch.no_grad():
-            preds = torch.sigmoid(model(x))
-            preds = (preds > 0.5).float()
-        torchvision.utils.save_image(
-            preds, f"{folder}/pred_{idx}.JPG"
-        )
-        torchvision.utils.save_image(y.unsqueeze(1), f"{folder}/pred_mask_{idx}.JPG")
+            preds = model(x)
+            preds = torch.argmax(preds, dim=1)
+
+        # Save input images
+        for i in range(x.shape[0]):
+            input_img = x[i].cpu().numpy().transpose(1, 2, 0)  # Convert from [C, H, W] to [H, W, C]
+            input_img = (input_img * 255).astype(np.uint8)  # Convert to uint8
+            input_img = Image.fromarray(input_img)
+            input_img.save(f"{folder}/input_{idx}_{i}.png")
+
+        # Save predicted masks
+        for i in range(preds.shape[0]):
+            pred_img = preds[i].cpu().numpy().astype(np.uint8)
+            pred_img = Image.fromarray(pred_img)
+            pred_img.save(f"{folder}/pred_{idx}_{i}.png")
+
+        # Save ground truth masks
+        for i in range(y.shape[0]):
+            mask_img = y[i].cpu().numpy().astype(np.uint8)
+            mask_img = Image.fromarray(mask_img)
+            mask_img.save(f"{folder}/mask_{idx}_{i}.png")
+
     model.train()

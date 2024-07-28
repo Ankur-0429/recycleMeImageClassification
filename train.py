@@ -1,9 +1,7 @@
-from dataset import SegmentationDataset
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch
 import torch.optim as optim
-from torchvision import transforms
 from model import UNET
 import json
 import albumentations as A
@@ -19,7 +17,7 @@ from utils import (
 )
 
 with open('./data/annotations.json') as f:
-    CATEGORIES = json.load(f)["categories"]
+    CATEGORIES = len(json.load(f)["categories"])
 
 
 LEARNING_RATE=1e-4
@@ -29,7 +27,7 @@ if torch.cuda.is_available():
 elif torch.backends.mps.is_built() and torch.backends.mps.is_available():
     DEVICE = torch.device("mps")
 BATCH_SIZE=32
-NUM_EPOCHS=3
+NUM_EPOCHS=10
 NUM_WORKERS=8
 IMAGE_HEIGHT=160
 IMAGE_WIDTH=240
@@ -41,7 +39,7 @@ def train(loader, model, optimizer, loss_fn):
 
     for _, (data, targets) in enumerate(loop):
         data = data.to(device=DEVICE)
-        targets = targets.float().unsqueeze(1).to(device=DEVICE)
+        targets = targets.long().to(device=DEVICE)
 
         predictions = model(data)
         loss = loss_fn(predictions, targets)
@@ -80,8 +78,8 @@ def main():
         ]
     )
 
-    model = UNET(in_channels=3, out_channels=1).to(device=DEVICE)
-    loss_fn = nn.BCEWithLogitsLoss()
+    model = UNET(in_channels=3, out_channels=CATEGORIES).to(device=DEVICE)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=255)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     train_loader, val_loader = get_loaders(
@@ -103,7 +101,7 @@ def main():
         }
         save_checkpoint(checkpoint)
 
-        check_accuracy(val_loader, model, device=DEVICE)
+        # check_accuracy(val_loader, model, device=DEVICE)
         save_predictions_as_imgs(
             val_loader, model, device=DEVICE
         )

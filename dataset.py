@@ -9,6 +9,7 @@ class SegmentationDataset(Dataset):
         with open(os.path.join("./data/", annotations_file)) as f:
             self.data = json.load(f)
         self.transform = transform
+        self.num_classes = len(self.data['categories'])
 
     def __len__(self):
         return len(self.data['images'])
@@ -16,17 +17,17 @@ class SegmentationDataset(Dataset):
     def __getitem__(self, idx):
         img_info = self.data['images'][idx]
         img_path = os.path.join("./data/", img_info['file_name'])
-        image = Image.open(img_path).convert("RGB")
-        mask = np.zeros((image.height, image.width), dtype=np.float32)
-        image = np.array(image)
-
+        image = np.array(Image.open(img_path).convert("RGB"))
+        mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+        
         for ann in self.data['annotations']:
             if ann['image_id'] == img_info['id']:
+                category_id = ann['category_id']
                 for seg in ann['segmentation']:
                     seg = [seg[i:i+2] for i in range(0, len(seg), 2)]
                     seg_np = np.array(seg, dtype=np.int32)
                     if len(seg_np) > 0:
-                        cv2.fillPoly(mask, [seg_np], 1)
+                        cv2.fillPoly(mask, [seg_np], category_id)
 
         if self.transform:
             augmentations = self.transform(image=image, mask=mask)
